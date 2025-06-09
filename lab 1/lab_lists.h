@@ -36,22 +36,25 @@ struct node{
  * - the phone no.
  * - the name
  */
-void display(struct node *start) {
-    struct node* temp = start;
-    int count = 1;
-    
-    if (temp == NULL) {
-        printf("The directory is empty.\n");
+void display(struct node *start) 
+{
+    if(start == NULL) 
+    {
+        printf("The directory is empty\n");
         return;
     }
-
-    while (temp != NULL) {
-        printf("%d : %s : %s\n", count++, temp->name, temp->phonenumber);
-        temp = temp->next;
-        
+    
+    struct node *current = start;
+    int count = 1;
+    
+    while (current != NULL)
+    {
+        printf("%d : %s : %s\n", count++, current->name, current->phonenumber);
+        current = current->next;
     }
     printf("=== Finished the list ===\n");
 }
+
 
 
 
@@ -65,10 +68,11 @@ void display(struct node *start) {
  * 0 if the insertion is successful,
  * -1 if the node already exists in the directory
  */
-int insert_record(struct node **start) {
+int insert_record(struct node **start) 
+{
     struct node* newNode = (struct node*)malloc(sizeof(struct node));
     if (!newNode) {
-        printf("Memory allocation failed.\n");
+        printf("Memory allocation failed\n");
         return -1;
     }
 
@@ -77,20 +81,20 @@ int insert_record(struct node **start) {
 
     printf("Write name: ");
     fgets(newNode->name, sizeof(newNode->name), stdin);
-    newNode->name[strcspn(newNode->name, "\n")] = '\0'; // Remove newline
+    newNode->name[strcspn(newNode->name, "\n")] = '\0';
 
     if (query_directory_plus(*start, newNode->name, 1)) {
-        printf("Error: Name already exists.\n");
+        printf("Error: Name already exists\n");
         free(newNode);
         return -1;
     }
 
     printf("Write phone number: ");
     fgets(newNode->phonenumber, sizeof(newNode->phonenumber), stdin);
-    newNode->phonenumber[strcspn(newNode->phonenumber, "\n")] = '\0'; // Remove newline
+    newNode->phonenumber[strcspn(newNode->phonenumber, "\n")] = '\0';
 
     if (query_directory_plus(*start, newNode->phonenumber, 2)) {
-        printf("Error: Phone number already exists.\n");
+        printf("Error: Phone number already exists\n");
         free(newNode);
         return -1;
     }
@@ -98,14 +102,9 @@ int insert_record(struct node **start) {
     newNode->next = *start;
     *start = newNode;
 
-    printf("Success.\n");
+    printf("Inserted successfully\n");
     return 0;
 }
-
-
-
-
-
 
 /*
  * Deletes a record with the given phone no. from user.
@@ -116,15 +115,15 @@ int insert_record(struct node **start) {
  *  0 if successful,
  *  -1 otherwise.
  */
-int delete_record(struct node **start){
-    //first find bottom
+int delete_record(struct node **start)
+{
     if(*start == NULL) {
-        printf("Dir empty");
+        printf("Directory is empty!\n");
         return -1;
     }
 
-    char tempnum[10];
-    printf("Write the number you want deleted : ");
+    char tempnum[16];
+    printf("Write the number you want deleted: ");
     scanf("%s", tempnum);
 
     struct node *temp = *start, *previous = NULL;
@@ -135,21 +134,16 @@ int delete_record(struct node **start){
             if(previous == NULL) {
                 *start = temp->next;
             }
-            else {
-                previous->next = temp->next;
-            }
+            else {previous->next = temp->next;}
             free(temp);
-            printf("Record deleted successfully.\n");
+            printf("Record deleted :c\n");
             return 0;
         }
         previous = temp;
         temp = temp->next;
-        /* code */
     }
-    printf("Record not found ");
+    printf("Record not found :c so sad\n");
     return -1;
-    
-
 }
 
 /*
@@ -161,41 +155,34 @@ int delete_record(struct node **start){
  * Returns
  * - the pointer to the found record or NULL if not found
  */
-struct node *query_directory(struct node *start, int option){
-    struct node* temp = start ;
-    char tempstr [64];
+struct node *query_directory(struct node *start, int option)
+{
+    struct node* temp = start;
+    char tempstr[64];
     
     switch (option)
     {
     case 1:
-        printf("Write name : ");
+        printf("Write name: ");
         break;
     case 2:
-        printf("Write Number : ");
+        printf("Write number: ");
         break;
     default:
-        printf("Invalid option, try again you nerd");
+        printf("Invalid option, try again\n");
         return NULL;
-        break;
     }
-    scanf("%s" , tempstr);
+    scanf("%s", tempstr);
 
     while(temp != NULL) {
         if ((option == 1 && strcmp(temp->name, tempstr) == 0) ||
             (option == 2 && strcmp(temp->phonenumber, tempstr) == 0)) {
-            printf("Found register : %s : %s \n", temp->name, temp->phonenumber);
+            printf("Found record: %s : %s\n", temp->name, temp->phonenumber);
             return temp;
         }
         temp = temp->next;
     }
-
-    printf("Register not found \n");
-
     return NULL;
-
-    
-    
-    
 }
 
 /*
@@ -228,23 +215,24 @@ struct node *query_directory_plus(struct node *start, char *text, int choice) {
  * Input:
  * - the pointer to the pointer to the first list node
  */
-void delete_directory(struct node **start){
-    struct node* temp = *start;
-    struct node * temptemp;
-    if(temp == NULL) {
-        printf("Dir empty");
-        return ;
+void delete_directory(struct node **start)
+{
+    if(*start == NULL) {
+        printf("Directory is already empty\n");
+        return;
     }
-    while (temp != NULL)
+
+    struct node* current = *start;
+    struct node *next;
+
+    while (current != NULL)
     {
-        temptemp = temp->next;
-        free(temp);
-        temp = temptemp;
-        /* code */
+        next = current->next;
+        free(current);
+        current = next;
     }
     *start = NULL;
-    printf("Complete deletion");
-    
+    printf("All records deleted successfully\n");
 }
 
 #endif  // LAB_LISTS_H
