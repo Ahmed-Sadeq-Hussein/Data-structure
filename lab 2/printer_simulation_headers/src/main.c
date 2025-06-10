@@ -37,11 +37,13 @@ int main() {
     //Run sim
     for (int second = 1; second <= SIMULATION_TIME; second++) {
         simulate_second(&printer, q, second);
+        printf("\n ~~~~Running printing simulation ~~~~ \n");
     }
 
     //  Cleanup 
     while (!is_empty(q)) {
         struct task *t = dequeue(q);
+        printf("## Cleaning task queue ##\n ");
         free(t);
     }
     free(q);
