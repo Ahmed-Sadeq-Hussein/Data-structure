@@ -34,7 +34,7 @@ int main() {
         return 1;
     }
 
-    //Run simulation
+    //Run sim
     for (int second = 1; second <= SIMULATION_TIME; second++) {
         simulate_second(&printer, q, second);
     }
@@ -46,7 +46,7 @@ int main() {
     }
     free(q);
 
-    //Free current task if printer was busy when simulation ended
+    //Free task if printer was busy when sim finished
     if (printer.current_task != NULL) {
         free(printer.current_task);
     }
