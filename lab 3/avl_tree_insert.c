@@ -2,8 +2,8 @@
  * by Reema Thareja, Oxford University Press, 2014.
  * The detailed comments and references to the lecture slides are added by Vladimir Tarasov
  * Data Structures, 7.5 credits, Spring 2022.
+ * AHMED HUSSEIN 2025
  */
-
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -193,6 +193,25 @@ void inorder(struct node *ptr)
         inorder(ptr->left);
         printf("% d", ptr->data);
         inorder(ptr->right);
+    }
+}
+//just goes right to find the largest until encountering null
+struct node *findLargestElement(struct node *tree){
+    if(tree = NULL){
+        return NULL;
+    }
+    while (tree->right != NULL) {
+        tree = tree->right;
+    }
+    
+    
+}
+//Deletion. Works simply by finding the tree node similar to search function
+struct node *delete(int data, struct node *tree, bool *ht_inc) {
+    if(tree == NULL) {
+        *ht_inc = FALSE;
+        printf("No tree to delete anything from");
+        return NULL;
     }
 }
 
