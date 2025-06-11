@@ -195,6 +195,11 @@ void inorder(struct node *ptr)
         inorder(ptr->right);
     }
 }
+
+
+//******************************************************************* */
+//******************************************************************* */
+//******************************************************************* */
 //just goes right to find the largest until encountering null
 struct node *findLargestElement(struct node *tree){
     if(tree = NULL){
@@ -202,19 +207,145 @@ struct node *findLargestElement(struct node *tree){
     }
     while (tree->right != NULL) {
         tree = tree->right;
-    }
-    
-    
+        //printf("Found largest")
+    }   
 }
-//Deletion. Works simply by finding the tree node similar to search function
+//******************************************************************* */
+// Helper function for right rotation (similar to LL rotation)
+struct node *rotateRight(struct node *tree) {
+    struct node *newRoot = tree->left;
+    tree->left = newRoot->right;
+    newRoot->right = tree;
+    return newRoot;
+}
+//******************************************************************* */
+// Helper function for left rotation (similar to RR rotation)
+struct node *rotateLeft(struct node *tree) {
+    struct node *newRoot = tree->right;
+    tree->right = newRoot->left;
+    newRoot->left = tree;
+    return newRoot;
+}
+//******************************************************************* */
+//Function to balance left sub-tree after deletion
+struct node *balanceLeft(struct node *tree, bool *ht_inc) {
+    switch (tree->balance) {
+        case -1:  // Right heavy
+            tree->balance = 0;
+            break;
+        case 0:  // Balanced
+            tree->balance = 1;
+            *ht_inc = FALSE;
+            break;
+        case 1:  // Left heavy - need rotation
+            // R0 or R1 rotation (similar to LL)
+            if (tree->left->balance >= 0) {
+                printf("R1 Rotation\n");
+                tree = rotateRight(tree);
+                tree->balance = 0;
+                tree->right->balance = 0;
+            } 
+            // R-1 rotation (similar to LR)
+            else {
+                printf("R-1 Rotation\n");
+                tree->left = rotateLeft(tree->left);
+                tree = rotateRight(tree);
+                // Update balance factors
+                if (tree->balance == 0) {
+                    tree->left->balance = 0;
+                    tree->right->balance = 0;
+                } else if (tree->balance == 1) {
+                    tree->left->balance = 0;
+                    tree->right->balance = -1;
+                } else {
+                    tree->left->balance = 1;
+                    tree->right->balance = 0;
+                }
+                tree->balance = 0;
+            }
+            *ht_inc = FALSE;
+            break;
+    }
+    return tree;
+}
+//******************************************************************* */
+// Function to balance right sub-tree after deletion
+struct node *balanceRight(struct node *tree, bool *ht_inc) {
+    switch (tree->balance) {
+        case 1:  // Left heavy
+            tree->balance = 0;
+            break;
+        case 0:  // Balanced
+            tree->balance = -1;
+            *ht_inc = FALSE;
+            break;
+        case -1:  // Right heavy - need rotation
+            // Similar to RR rotation (not needed for lab requirements)
+            printf("Right Rotation\n");
+            tree = rotateLeft(tree);
+            tree->balance = 0;
+            tree->left->balance = 0;
+            *ht_inc = FALSE;
+            break;
+    }
+    return tree;
+}
+//******************************************************************* */
+// Main deletion function
 struct node *delete(int data, struct node *tree, bool *ht_inc) {
-    if(tree == NULL) {
+    if (tree == NULL) {
         *ht_inc = FALSE;
-        printf("No tree to delete anything from");
         return NULL;
     }
+    
+    // Search for the node to delete
+    if (data < tree->data) {
+        tree->left = delete(data, tree->left, ht_inc);
+        if (*ht_inc) {
+            tree = balanceLeft(tree, ht_inc);
+        }
+    } 
+    else if (data > tree->data) {
+        tree->right = delete(data, tree->right, ht_inc);
+        if (*ht_inc) {
+            tree = balanceRight(tree, ht_inc);
+        }
+    } 
+    else {
+        // Node found - perform deletion
+        struct node *temp;
+        
+        if (tree->left == NULL || tree->right == NULL) {
+            // Node with 0 or 1 child
+            temp = tree->left ? tree->left : tree->right;
+            
+            if (temp == NULL) {
+                // No children case
+                temp = tree;
+                tree = NULL;
+                *ht_inc = TRUE;
+            } else {
+                // One child case
+                *tree = *temp;  // Copy contents
+                *ht_inc = TRUE;
+            }
+            
+            free(temp);
+        } else {
+            // Node with 2 children - find largest in left subtree
+            temp = findLargestElement(tree->left);
+            tree->data = temp->data;
+            tree->left = delete(temp->data, tree->left, ht_inc);
+            
+            if (*ht_inc) {
+                tree = balanceLeft(tree, ht_inc);
+            }
+        }
+    }
+    
+    return tree;
 }
-
+//******************************************************************** */
 int main()
 {
     bool ht_inc;
