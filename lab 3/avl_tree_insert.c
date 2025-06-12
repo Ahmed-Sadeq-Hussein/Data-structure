@@ -6,6 +6,7 @@
  */
 #include <stdio.h>
 #include <stdlib.h>
+#include "lab_binary_trees.h"
 
 // An enumeration emulating a boolean type
 typedef enum

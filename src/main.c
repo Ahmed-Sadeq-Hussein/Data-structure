@@ -3,8 +3,9 @@
 //Written by He Tan, March 2022
 #include <stdio.h>
 #include <stdlib.h>
-#include "heap.h"
-#include "graph.h"
+#include "graph.c"
+#include "heap.c"
+
 
 //the number of nodes in the graph
 #define GRAPH_NODE_N 7
@@ -15,7 +16,47 @@
 //parameters: source_node, the id of the source node
 //            dist, the minimum distance
 //            graph, the graph
-void dijkstra(int source_node, int dist[], struct graph* graph);
+void dijkstra(int source_node, int dist[], struct graph* graph) {
+    // Initialize distances to infinity
+    for (int i = 0; i < GRAPH_NODE_N; i++) {
+        dist[i] = INFINITY;
+    }
+    dist[source_node] = 0;  // Distance to self is 0
+
+    // Create priority queue (min heap)
+    struct minheap* pq = create_heap(GRAPH_NODE_N);
+
+    // Insert all vertices into the priority queue
+    for (int v = 0; v < GRAPH_NODE_N; v++) {
+        insert_heap(pq, new_min_heap_node(v, dist[v]));
+    }
+
+    // Main loop
+    while (!is_empty(pq)) {
+        // Extract the vertex with minimum distance
+        struct minHeapNode* minNode = extract_min(pq);
+        int u = minNode->graph_node_id;
+        free(minNode);
+
+        // Iterate through all adjacent vertices
+        struct adjListNode* neighbor = graph->array[u].head;
+        while (neighbor != NULL) {
+            int v = neighbor->graph_node_id;
+            int weight = neighbor->weight;
+
+            // Relaxation step
+            if (dist[u] != INFINITY && dist[u] + weight < dist[v]) {
+                dist[v] = dist[u] + weight;
+                // Update distance in priority queue
+                decreaseKey(pq, v, dist[v]);
+            }
+            neighbor = neighbor->next;
+        }
+    }
+
+    // Clean up
+    destroy_heap(pq);
+}
 
 
 int main(void)
