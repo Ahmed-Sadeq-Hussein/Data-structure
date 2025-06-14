@@ -1,391 +1,305 @@
-/* This source code is from the texbook Data Structures Using C, 2nd edition,
- * by Reema Thareja, Oxford University Press, 2014.
- * The detailed comments and references to the lecture slides are added by Vladimir Tarasov
- * Data Structures, 7.5 credits, Spring 2022.
- * AHMED HUSSEIN 2025
- */
 #include <stdio.h>
 #include <stdlib.h>
 #include "lab_binary_trees.h"
 
-// An enumeration emulating a boolean type
-typedef enum
-{
-    FALSE,
-    TRUE
-} bool;
-
-// A structure implementing a node of an AVL tree. 
-struct node
-{
+// AVL Tree Node Structure
+struct node {
     int data;
     int balance;
     struct node *left;
     struct node *right;
 };
 
-struct node *search(struct node *ptr, int data)
-{
-    if (ptr != NULL)
-        if (data < ptr->data)
-            ptr = search(ptr->left, data);
-        else if (data > ptr->data)
-            ptr = search(ptr->right, data);
-    return (ptr);
+// Helper function to get height of a node
+int height(struct node *node) {
+    if (node == NULL)
+        return 0;
+    return 1 + (height(node->left) > height(node->right) ? height(node->left) : height(node->right));
 }
 
-// A function to insert a new element into an AVL tree.
-struct node *insert(int data, struct node *tree, bool *ht_inc)
-{
-    // ht_inc is a tricky variable. It is set to TRUE after a new node is inserted
-    // as a leaf, which means that a re-balancing might be needed at a hihger
-    // level of a tree, where the critical node resides. When re-balancing is  
-    // done or will not be needed at a hihger level, ht_inc is set to FALSE.
-    struct node *aptr, *bptr;
-    if (tree == NULL)
-    {
+// Helper function to get balance factor
+int getBalance(struct node *node) {
+    if (node == NULL)
+        return 0;
+    return height(node->left) - height(node->right);
+}
+
+// Right rotation (LL rotation)
+struct node *rightRotate(struct node *y) {
+    struct node *x = y->left;
+    struct node *T2 = x->right;
+
+    // Perform rotation
+    x->right = y;
+    y->left = T2;
+
+    // Update balance factors
+    y->balance = getBalance(y);
+    x->balance = getBalance(x);
+
+    return x;
+}
+
+// Left rotation (RR rotation)
+struct node *leftRotate(struct node *x) {
+    struct node *y = x->right;
+    struct node *T2 = y->left;
+
+    // Perform rotation
+    y->left = x;
+    x->right = T2;
+
+    // Update balance factors
+    x->balance = getBalance(x);
+    y->balance = getBalance(y);
+
+    return y;
+}
+
+// Insert function
+struct node *insert(int data, struct node *tree, bool *ht_inc) {
+    if (tree == NULL) {
         tree = (struct node *)malloc(sizeof(struct node));
         tree->data = data;
-        tree->left = NULL;
-        tree->right = NULL;
+        tree->left = tree->right = NULL;
         tree->balance = 0;
-        *ht_inc = TRUE; // a new node is a added
-        return (tree);
+        *ht_inc = TRUE;
+        return tree;
     }
-    // A new node is inserted as a leaf.
-    // First find where to add it by following the BST order
-    // Then check the balance factor
-    // Finally perform a rebalancing rotation
-    if (data < tree->data)
-    {
-        // Insert in the left sub-tree
+
+    if (data < tree->data) {
         tree->left = insert(data, tree->left, ht_inc);
-        if (*ht_inc == TRUE) // a re-balancing might be needed
-        {
-            // Check the balance factor after the insertion
-            switch (tree->balance)
-            {
-            case -1: /* Right heavy */
-                // the node was right heavy and after insertion has become balanced.
-                tree->balance = 0;
-                *ht_inc = FALSE; // re-balancing will not be needed at a hihger level
-                break;
-            case 0: /* Balanced */
-                // the node was balanced and after insertion has become left heavy.
-                tree->balance = 1;
-                break;
-            case 1: /* Left heavy */
-                // the node was left heavy and after insertion has become an unbalanced sub-tree.
-                // Rebalancing rotation is needed - determine the type of rotation
-                // Check the left sub-tree
-                aptr = tree->left; // "tree" is A and "aptr" is B (see Fig. 10.40 in the textbook)
-                if (aptr->balance == 1)
-                {
-                    // LL rotation: the new node is inserted in the left sub-tree of
-                    // the left sub-tree of the critical node
-                    printf("Left to Left Rotation\n");
-                    tree->left = aptr->right; // T2 is made left sub-tree of A (see Fig. 10.40 in the textbook)
-                    aptr->right = tree;             // A is made right sub-tree of B (see Fig. 10.40 in the textbook)
+        if (*ht_inc) {
+            switch (tree->balance) {
+                case -1:
                     tree->balance = 0;
-                    aptr->balance = 0;
-                    tree = aptr; // B is moved up to the A-place (see Fig. 10.40 in the textbook)
-                }
-                else
-                {
-                    // LR rotation: the new node is inserted in the right sub-tree of
-                    // the left sub-tree of the critical node
-                    printf("Left to Right rotation\n");
-                    bptr = aptr->right;             // "bptr" is C (see Fig. 10.44 in the textbook)
-                    aptr->right = bptr->left; // T2 is made right sub-tree of B (see Fig. 10.44 in the textbook)
-                    bptr->left = aptr;              // B is made left sub-tree of C (see Fig. 10.44 in the textbook)
-                    tree->left = bptr->right;  // T3 is made left sub-tree of A (see Fig. 10.44 in the textbook)
-                    bptr->right = tree;              // A is made right sub-tree of C (see Fig. 10.44 in the textbook)
-                    if (bptr->balance == 1)
-                        tree->balance = -1;
-                    else
-                        tree->balance = 0;
-                    if (bptr->balance == -1)
-                        aptr->balance = 1;
-                    else
-                        aptr->balance = 0;
-                    bptr->balance = 0;
-                    tree = bptr; // C moved up to the A-place (see Fig. 10.44 in the textbook)
-                }
-                *ht_inc = FALSE; //re-balancing is done
+                    *ht_inc = FALSE;
+                    break;
+                case 0:
+                    tree->balance = 1;
+                    break;
+                case 1:
+                    if (tree->left->balance == 1) {
+                        printf("LL Rotation\n");
+                        tree = rightRotate(tree);
+                    } else {
+                        printf("LR Rotation\n");
+                        tree->left = leftRotate(tree->left);
+                        tree = rightRotate(tree);
+                    }
+                    tree->balance = 0;
+                    *ht_inc = FALSE;
             }
         }
-    }
-    else if (data > tree->data)
-    {
-        // Insert in the right sub-tree
+    } else if (data > tree->data) {
         tree->right = insert(data, tree->right, ht_inc);
-        if (*ht_inc == TRUE) // a re-balancing might be needed
-        {
-            // Check the balance factor after the insertion
-            switch (tree->balance)
-            {
-            case 1: /* Left heavy */
-                // the node was left heavy and after insertion has become balanced.
-                tree->balance = 0;
-                *ht_inc = FALSE; // re-balancing will not be needed at a hihger level
-                break;
-            case 0: /* Balanced */
-                // the node was balanced and after insertion has become right heavy.
-                tree->balance = -1;
-                break;
-            case -1: /* Right heavy */
-                // the node was right heavy and after insertion has become an unbalanced sub-tree.
-                // Rebalancing rotation is needed - determine the type of rotation
-                aptr = tree->right; // "tree" is A and "aptr" is B (see Fig. 10.44 and 10.46 in the textbook)
-                if (aptr->balance == -1)
-                {
-                    printf("Right to Right Rotation\n");
-                    tree->right = aptr->left; // T2 is made right sub-tree of A (see Fig. 10.42 in the textbook)
-                    aptr->left = tree;              // A is made left sub-tree of B (see Fig. 10.42 in the textbook)
+        if (*ht_inc) {
+            switch (tree->balance) {
+                case 1:
                     tree->balance = 0;
-                    aptr->balance = 0;
-                    tree = aptr; // B is moved up to A-palce (see slide 47)
-                }
-                else
-                {
-                    printf("Right to Left Rotation\n");
-                    bptr = aptr->left;              //  "bptr" is C (see Fig. 10.46 in the textbook)
-                    aptr->left = bptr->right; // T3 is made left sub-tree of B (see Fig. 10.46 in the textbook)
-                    bptr->right = aptr;             // B is made right sub-tree of C (see Fig. 10.46 in the textbook)
-                    tree->right = bptr->left;  // T2 is made right sub-tree of A (see Fig. 10.46 in the textbook)
-                    bptr->left = tree;
-                    if (bptr->balance == -1)
-                        tree->balance = 1;
-                    else
-                        tree->balance = 0;
-                    if (bptr->balance == 1)
-                        aptr->balance = -1;
-                    else
-                        aptr->balance = 0;
-                    bptr->balance = 0;
-                    tree = bptr; // C is moved up to A-palce (see Fig. 10.46 in the textbook)
-                }               /*End of else*/
-                *ht_inc = FALSE; // re-balancing is done
+                    *ht_inc = FALSE;
+                    break;
+                case 0:
+                    tree->balance = -1;
+                    break;
+                case -1:
+                    if (tree->right->balance == -1) {
+                        printf("RR Rotation\n");
+                        tree = leftRotate(tree);
+                    } else {
+                        printf("RL Rotation\n");
+                        tree->right = rightRotate(tree->right);
+                        tree = leftRotate(tree);
+                    }
+                    tree->balance = 0;
+                    *ht_inc = FALSE;
             }
         }
     }
-    return (tree);
+    return tree;
 }
 
-// A function to display an AVL tree.
-void display(struct node *ptr, int level)
-{
-    int i;
-    if (ptr != NULL)
-    {
+// Display function
+void display(struct node *ptr, int level) {
+    if (ptr != NULL) {
         display(ptr->right, level + 1);
         printf("\n");
-        for (i = 0; i < level; i++)
-            printf(" ");
+        for (int i = 0; i < level; i++)
+            printf("    ");
         printf("%d", ptr->data);
         display(ptr->left, level + 1);
     }
 }
 
-void inorder(struct node *ptr)
-{
-    if (ptr != NULL)
-    {
-        inorder(ptr->left);
-        printf("% d", ptr->data);
-        inorder(ptr->right);
-    }
-}
-
-
-//******************************************************************* */
-//******************************************************************* */
-//******************************************************************* */
-//just goes right to find the largest until encountering null
-struct node *findLargestElement(struct node *tree){
-    if(tree = NULL){
+// Find largest element
+struct node *findLargestElement(struct node *tree) {
+    if (tree == NULL)
         return NULL;
-    }
-    while (tree->right != NULL) {
+    while (tree->right != NULL)
         tree = tree->right;
-        //printf("Found largest")
-    }   
-}
-//******************************************************************* */
-// Helper function for right rotation (similar to LL rotation)
-struct node *rotateRight(struct node *tree) {
-    struct node *newRoot = tree->left;
-    tree->left = newRoot->right;
-    newRoot->right = tree;
-    return newRoot;
-}
-//******************************************************************* */
-// Helper function for left rotation (similar to RR rotation)
-struct node *rotateLeft(struct node *tree) {
-    struct node *newRoot = tree->right;
-    tree->right = newRoot->left;
-    newRoot->left = tree;
-    return newRoot;
-}
-//******************************************************************* */
-//Function to balance left sub-tree after deletion
-struct node *balanceLeft(struct node *tree, bool *ht_inc) {
-    switch (tree->balance) {
-        case -1:  // Right heavy
-            tree->balance = 0;
-            break;
-        case 0:  // Balanced
-            tree->balance = 1;
-            *ht_inc = FALSE;
-            break;
-        case 1:  // Left heavy - need rotation
-            // R0 or R1 rotation (similar to LL)
-            if (tree->left->balance >= 0) {
-                printf("R1 Rotation\n");
-                tree = rotateRight(tree);
-                tree->balance = 0;
-                tree->right->balance = 0;
-            } 
-            // R-1 rotation (similar to LR)
-            else {
-                printf("R-1 Rotation\n");
-                tree->left = rotateLeft(tree->left);
-                tree = rotateRight(tree);
-                // Update balance factors
-                if (tree->balance == 0) {
-                    tree->left->balance = 0;
-                    tree->right->balance = 0;
-                } else if (tree->balance == 1) {
-                    tree->left->balance = 0;
-                    tree->right->balance = -1;
-                } else {
-                    tree->left->balance = 1;
-                    tree->right->balance = 0;
-                }
-                tree->balance = 0;
-            }
-            *ht_inc = FALSE;
-            break;
-    }
     return tree;
 }
-//******************************************************************* */
-// Function to balance right sub-tree after deletion
-struct node *balanceRight(struct node *tree, bool *ht_inc) {
-    switch (tree->balance) {
-        case 1:  // Left heavy
-            tree->balance = 0;
-            break;
-        case 0:  // Balanced
-            tree->balance = -1;
-            *ht_inc = FALSE;
-            break;
-        case -1:  // Right heavy - need rotation
-            // Similar to RR rotation (not needed for lab requirements)
-            printf("Right Rotation\n");
-            tree = rotateLeft(tree);
-            tree->balance = 0;
-            tree->left->balance = 0;
-            *ht_inc = FALSE;
-            break;
-    }
-    return tree;
-}
-//******************************************************************* */
-// Main deletion function
+
+// Delete function
 struct node *delete(int data, struct node *tree, bool *ht_inc) {
     if (tree == NULL) {
         *ht_inc = FALSE;
         return NULL;
     }
-    
-    // Search for the node to delete
+
     if (data < tree->data) {
         tree->left = delete(data, tree->left, ht_inc);
         if (*ht_inc) {
-            tree = balanceLeft(tree, ht_inc);
+            switch (tree->balance) {
+                case -1:
+                    tree->balance = 0;
+                    break;
+                case 0:
+                    tree->balance = 1;
+                    *ht_inc = FALSE;
+                    break;
+                case 1:
+                    if (tree->left->balance >= 0) {
+                        printf("R1 Rotation\n");
+                        tree = rightRotate(tree);
+                    } else {
+                        printf("R-1 Rotation\n");
+                        tree->left = leftRotate(tree->left);
+                        tree = rightRotate(tree);
+                    }
+                    *ht_inc = FALSE;
+            }
         }
-    } 
-    else if (data > tree->data) {
+    } else if (data > tree->data) {
         tree->right = delete(data, tree->right, ht_inc);
         if (*ht_inc) {
-            tree = balanceRight(tree, ht_inc);
+            switch (tree->balance) {
+                case 1:
+                    tree->balance = 0;
+                    break;
+                case 0:
+                    tree->balance = -1;
+                    *ht_inc = FALSE;
+                    break;
+                case -1:
+                    printf("Right Rotation\n");
+                    tree = leftRotate(tree);
+                    *ht_inc = FALSE;
+            }
         }
-    } 
-    else {
-        // Node found - perform deletion
+    } else {
+        // Node to delete found
         struct node *temp;
-        
         if (tree->left == NULL || tree->right == NULL) {
-            // Node with 0 or 1 child
             temp = tree->left ? tree->left : tree->right;
-            
             if (temp == NULL) {
-                // No children case
                 temp = tree;
                 tree = NULL;
                 *ht_inc = TRUE;
             } else {
-                // One child case
-                *tree = *temp;  // Copy contents
+                *tree = *temp;
                 *ht_inc = TRUE;
             }
-            
             free(temp);
         } else {
-            // Node with 2 children - find largest in left subtree
             temp = findLargestElement(tree->left);
             tree->data = temp->data;
             tree->left = delete(temp->data, tree->left, ht_inc);
-            
             if (*ht_inc) {
-                tree = balanceLeft(tree, ht_inc);
+                switch (tree->balance) {
+                    case -1:
+                        tree->balance = 0;
+                        break;
+                    case 0:
+                        tree->balance = 1;
+                        *ht_inc = FALSE;
+                        break;
+                    case 1:
+                        if (tree->left->balance >= 0) {
+                            printf("R1 Rotation\n");
+                            tree = rightRotate(tree);
+                        } else {
+                            printf("R-1 Rotation\n");
+                            tree->left = leftRotate(tree->left);
+                            tree = rightRotate(tree);
+                        }
+                        *ht_inc = FALSE;
+                }
             }
         }
     }
-    
     return tree;
 }
-//******************************************************************** */
-int main()
-{
-    bool ht_inc;
-    int data, num;
+
+// Search function
+struct node *search(struct node *ptr, int data) {
+    if (ptr == NULL || ptr->data == data)
+        return ptr;
+    if (ptr->data < data)
+        return search(ptr->right, data);
+    return search(ptr->left, data);
+}
+
+// Inorder traversal
+void inorder(struct node *ptr) {
+    if (ptr != NULL) {
+        inorder(ptr->left);
+        printf("%d ", ptr->data);
+        inorder(ptr->right);
+    }
+}
+
+// Main function for testing
+int main() {
     struct node *root = NULL;
-    while (1)
-    {
-        printf("1.Insert\n");
-        printf("2.Display\n");
-        printf("3.Quit\n");
-        printf("Enter your option : ");
-        scanf("%d", &num);
-        switch (num)
-        {
-        case 1:
-            printf("Enter the value to be inserted : ");
-            scanf("%d", &data);
-            if (search(root, data) == NULL)
-                root = insert(data, root, &ht_inc);
-            else
-                printf("Duplicate value ignored\n");
-            break;
-        case 2:
-            if (root == NULL)
-            {
-                printf("Tree is empty\n");
-                continue;
-            }
-            printf("Tree is :\n");
-            display(root, 1);
-            printf("\n\n");
-            printf("Inorder Traversal is : ");
-            inorder(root);
-            printf("\n");
-            break;
-        case 3:
-            exit(1);
-        default:
-            printf("Wrong option\n");
+    bool ht_inc;
+    int choice, value;
+    
+    while (1) {
+        printf("\nAVL Tree Operations\n");
+        printf("1. Insert\n");
+        printf("2. Delete\n");
+        printf("3. Display\n");
+        printf("4. Search\n");
+        printf("5. Inorder Traversal\n");
+        printf("6. Exit\n");
+        printf("Enter your choice: ");
+        scanf("%d", &choice);
+        
+        switch (choice) {
+            case 1:
+                printf("Enter value to insert: ");
+                scanf("%d", &value);
+                root = insert(value, root, &ht_inc);
+                break;
+            case 2:
+                printf("Enter value to delete: ");
+                scanf("%d", &value);
+                root = delete(value, root, &ht_inc);
+                break;
+            case 3:
+                printf("AVL Tree:\n");
+                display(root, 1);
+                printf("\n");
+                break;
+            case 4:
+                printf("Enter value to search: ");
+                scanf("%d", &value);
+                if (search(root, value))
+                    printf("Value %d found in tree\n", value);
+                else
+                    printf("Value %d not found\n", value);
+                break;
+            case 5:
+                printf("Inorder Traversal: ");
+                inorder(root);
+                printf("\n");
+                break;
+            case 6:
+                exit(0);
+            default:
+                printf("Invalid choice\n");
         }
     }
+    return 0;
 }
